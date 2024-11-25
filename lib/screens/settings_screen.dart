@@ -1,6 +1,6 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
+import '../screens/audio_manager.dart';
 import '../widgets/video_background.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -14,41 +14,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool isSoundEnabled = true;
   bool isBackgroundMusicEnabled = true;
   double soundVolume = 0.5;
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
-  // Background music file
-  final String backgroundMusic = 'assets/sounds/bgm.mp3';
-  // Sound effect file
-  final String clickSound = 'assets/sounds/click.mp3';
+  final AudioManager audioManager = AudioManager();
 
   @override
   void initState() {
     super.initState();
-    _playBackgroundMusic();
-  }
-
-  @override
-  void dispose() {
-    _audioPlayer.stop();
-    _audioPlayer.dispose();
-    super.dispose();
-  }
-
-  void _playBackgroundMusic() {
+    isBackgroundMusicEnabled = audioManager.isMusicEnabled;
+    soundVolume = audioManager.currentVolume;
     if (isBackgroundMusicEnabled) {
-      _audioPlayer.setVolume(soundVolume);
-      _audioPlayer.setReleaseMode(ReleaseMode.loop);
-      _audioPlayer.play(AssetSource(backgroundMusic));
-    } else {
-      _audioPlayer.stop();
-    }
-  }
-
-  void _playClickSound() {
-    if (isSoundEnabled) {
-      final player = AudioPlayer();
-      player.setVolume(soundVolume);
-      player.play(AssetSource(clickSound));
+      audioManager.playBackgroundMusic('sounds/bgm.mp3', soundVolume);
     }
   }
 
@@ -56,21 +31,33 @@ class _SettingsScreenState extends State<SettingsScreen> {
     setState(() {
       isSoundEnabled = !isSoundEnabled;
     });
-    _playClickSound();
+    audioManager.toggleSound(isSoundEnabled);
   }
 
   void _toggleBackgroundMusic() {
     setState(() {
       isBackgroundMusicEnabled = !isBackgroundMusicEnabled;
     });
-    _playBackgroundMusic();
+    audioManager.toggleMusic(isBackgroundMusicEnabled);
+    if (isBackgroundMusicEnabled) {
+      audioManager.playBackgroundMusic('sounds/bgm.mp3', soundVolume);
+    } else {
+      audioManager.stopBackgroundMusic();
+    }
   }
 
   void _changeVolume(double value) {
     setState(() {
       soundVolume = value;
     });
-    _audioPlayer.setVolume(value);
+    audioManager.setVolume(value);
+  }
+
+  @override
+  void dispose() {
+    // audioManager
+    // .stopBackgroundMusic(); // Stop background music when the screen is disposed
+    super.dispose();
   }
 
   @override
@@ -78,12 +65,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          // Video Background
           const VideoBackground(videoPath: 'assets/video/background2.mp4'),
-          // Settings UI
           Column(
             children: [
-              // Curved Header
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 20),
@@ -117,7 +101,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   children: [
                     const SizedBox(height: 30),
-                    // Sound Toggle
                     SwitchListTile(
                       value: isSoundEnabled,
                       onChanged: (value) {
@@ -135,7 +118,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       inactiveThumbColor: Colors.grey,
                     ),
                     const SizedBox(height: 10),
-                    // Background Music Toggle
                     SwitchListTile(
                       value: isBackgroundMusicEnabled,
                       onChanged: (value) {
@@ -153,7 +135,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       inactiveThumbColor: Colors.grey,
                     ),
                     const SizedBox(height: 10),
-                    // Sound Volume Slider
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -177,17 +158,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // Developer Info Button
                     ElevatedButton(
                       onPressed: () {
-                        _playClickSound();
+                        // Add click sound logic here if needed
                         showDialog(
                           context: context,
                           builder: (context) {
                             return AlertDialog(
                               title: const Text("Developer Info"),
                               content: const Text(
-                                "Tic Tac Toe Game\nVersion: 1.0\nDeveloped by: [Your Name]",
+                                "Tic Tac Toe Game\nVersion: 1.0\nDeveloped by: Professor Hari Om Shukla",
                                 style: TextStyle(fontSize: 16),
                               ),
                               actions: [
@@ -217,10 +197,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Back Button
                     ElevatedButton(
                       onPressed: () {
-                        _playClickSound();
+                        // Add click sound logic here if needed
                         Navigator.pop(context);
                       },
                       style: ElevatedButton.styleFrom(

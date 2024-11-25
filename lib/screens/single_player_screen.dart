@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:audioplayers/audioplayers.dart'; // Import the audioplayers package
 import 'package:flutter/material.dart';
 
 import '../widgets/video_background.dart';
@@ -16,6 +17,7 @@ class _SinglePlayerScreenState extends State<SinglePlayerScreen> {
   String currentPlayer = 'X';
   bool isGameOver = false;
   String result = '';
+  final AudioPlayer _audioPlayer = AudioPlayer(); // Audio player instance
 
   @override
   void initState() {
@@ -56,6 +58,7 @@ class _SinglePlayerScreenState extends State<SinglePlayerScreen> {
     if (board[index].isEmpty && !isGameOver) {
       setState(() {
         board[index] = currentPlayer;
+        _playClickSound(); // Play sound when a move is made
         if (_isWinning(currentPlayer)) {
           isGameOver = true;
           result = "$currentPlayer Wins!";
@@ -76,6 +79,7 @@ class _SinglePlayerScreenState extends State<SinglePlayerScreen> {
     int bestMove = _getBestMove();
     setState(() {
       board[bestMove] = 'O';
+      _playClickSound(); // Play sound when AI moves
       if (_isWinning('O')) {
         isGameOver = true;
         result = "You Lost!";
@@ -137,87 +141,119 @@ class _SinglePlayerScreenState extends State<SinglePlayerScreen> {
     }
   }
 
+  // Function to play the click sound
+  void _playClickSound() {
+    _audioPlayer.play(
+        AssetSource('sounds/click.mp3')); // Play the sound when a move is made
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Get the screen size using MediaQuery
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    // Set the max width for the game layout
+    final maxWidth = screenWidth > 600 ? 400.0 : screenWidth * 0.8;
+    final maxHeight = screenHeight > 600 ? 600.0 : screenHeight * 0.8;
+
     return Scaffold(
       body: Stack(
         children: [
           // Video background
           const VideoBackground(videoPath: 'assets/video/background2.mp4'),
-          // Game UI
-          Column(
-            children: [
-              const SizedBox(height: 40),
-              Text(
-                result.isNotEmpty ? result : "Player $currentPlayer's Turn",
-                style: const TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  shadows: [
-                    Shadow(
-                      offset: Offset(2, 2),
-                      blurRadius: 4,
-                      color: Colors.black54,
-                    ),
-                  ],
-                ),
-                textAlign: TextAlign.center,
+          // Centered game UI
+          Center(
+            child: Container(
+              width: maxWidth,
+              height: maxHeight,
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.5),
+                borderRadius: BorderRadius.circular(15),
               ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 10,
-                    mainAxisSpacing: 10,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Game Result Text
+                  Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Text(
+                      result.isNotEmpty
+                          ? result
+                          : "Player $currentPlayer's Turn",
+                      style: const TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(2, 2),
+                            blurRadius: 4,
+                            color: Colors.black54,
+                          ),
+                        ],
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                  padding: const EdgeInsets.all(20),
-                  itemCount: 9,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () => _handleTap(index),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Text(
-                            board[index],
-                            style: const TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                  const SizedBox(height: 20),
+                  // Game Grid
+                  Expanded(
+                    child: GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      padding: const EdgeInsets.all(20),
+                      itemCount: 9,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () => _handleTap(index),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.6),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                board[index],
+                                style: const TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              if (isGameOver)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 30.0),
-                  child: ElevatedButton(
-                    onPressed: _resetGame,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 50, vertical: 15),
-                      backgroundColor: Colors.purple,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    child: const Text(
-                      "Play Again",
-                      style:
-                          TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        );
+                      },
                     ),
                   ),
-                ),
-            ],
+                  if (isGameOver)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 30.0),
+                      child: ElevatedButton(
+                        onPressed: _resetGame,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 50, vertical: 15),
+                          backgroundColor: Colors.purple,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text(
+                          "Play Again",
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
